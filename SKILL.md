@@ -1,11 +1,11 @@
 ---
 name: isometric-pixel-loops
-description: Build seamless isometric pixel-diorama loop animations (360x280 software rasteriser, one small place on white, 4-10s ambient loop, no input). Use when asked for an isometric pixel animation, pixel loop, ambient video, diorama video, looping pixel scene, anime-style pixel loop, or a video version of the pixel-diorama style. Ships a timeline-only MIT engine, two starter loops (fishing dock, street runner), the visual rules, and loop recipes for walk cycles, figure rigs, staging, anime FX and seamless export.
+description: Build any seamless isometric pixel-diorama loop animation (360x280 software rasteriser, one small place on white, 4-10s ambient loop, no input) — nature, creatures, movie/anime scenes, shops, weather. Use when asked for an isometric pixel animation, pixel loop, ambient video, diorama video, looping pixel scene, anime-style pixel loop, pixel waterfall/forest/beach/dog/rain, or any subject in the pixel-diorama style. Ships a timeline-only MIT engine with terrain/vegetation/water/weather/creature helpers, three starter loops, the visual rules, and recipes for walk cycles, staging, composition, palettes, anime FX and seamless export.
 license: MIT
 compatibility: node >= 18, modern browser with canvas, ffmpeg optional for mp4 export
 metadata:
   author: isometric-pixel-loops
-  version: "1.1"
+  version: "2.0"
   scope: animation-loop
   platforms: [claude-code, cursor, antigravity, zed, opencode, windsurf, copilot, skills.sh]
 ---
@@ -33,31 +33,25 @@ Five ways it fails:
 
 All three use the same engine and visual rules. Read [references/visual-rules-loops.md](references/visual-rules-loops.md) before scene code.
 
-## 1. Pick one readable motion
+## 1. Decompose the prompt into archetypes (do this first)
 
-Silhouette-readable from a fixed camera: walk, run, wipe, flip, fan, seal set, paddle, sweep, pour, swing, drip, shimmer pass.
+Any prompt — waterfall, dog barking, movie duel, ramen alley — maps to [references/subjects.md](references/subjects.md). Fill this worksheet before scene code:
 
-A good loop motion has all three:
+1. **Terrain + water:** pick kinds from LOOP_KINDS (GRASS/SAND/STONE/SNOW/MUD/LAVA/ROAD/WATER) + water body (none/pond/river/falls/shore/puddle). Palette rows from [references/palettes.md](references/palettes.md).
+2. **Vegetation (pick 2–3):** tree/pine/palm/bamboo/bush/flowers/reeds/lily. One hero plant max.
+3. **Structure (0–1):** stall/house/bridge/dock/fence/gate/tower/steps. Every prop anchored per staging-logic (roof needs posts, crates touch walls, stripes inset via `roadStripes`).
+4. **Actors (max 3):** human idle/walk/seated/working, dog/cat (`dog()` with `barkBeat`), perched bird. 1 hero + rest ambient.
+5. **Motion budget:** each motion assigned a beat in [references/loop-beats.md](references/loop-beats.md). If the prompt names something with no recipe, substitute the closest archetype and say so — never invent primitives.
 
-1. ** readable silhouette.** Limbs separate from torso at 1:1. Test: squint — the action still reads.
-2. **A visible cycle.** Leaves the hand, crosses the place, returns. The viewer can time it within 2 seconds.
-3. **No accumulation.** Nothing spawns, scores, or moves permanently. Rings/fish/streaks wrap.
-
-Up to 3 movers: 1 hero + 2 ambient, choreographed on 4 beats (see [references/loop-beats.md](references/loop-beats.md)). Each beat peaks one action; test each actor solo.
-
-Test: say the loop in one sentence with its period. "A headband runner crosses while a vendor flips and a lantern sways, 8 seconds." If it needs "and then", it is two loops.
-
-Figures use [references/figure-rig.md](references/figure-rig.md): `walkPose()` 4-key gait, quantized heads, arm pose library, `lagAngle` secondary motion. Anime style cues (never copied characters) via [references/anime-fx.md](references/anime-fx.md). Every prop anchored per [references/staging-logic.md](references/staging-logic.md).
-
-Fits: walk/run cross, wipe/flip cycle, seal-hold-release, ripple rings, lantern sway, grill shimmer.
-Does not fit: camera moves, cuts, dialogue, menus, close-ups, per-pixel precision.
+Readable-silhouette test: squint at 1:1 — every actor's action reads in 2 seconds. Contrast law: cloth/skin 2+ ramp steps from the ground mean.
 
 ## 2. Start from the starter
 
 ```bash
 cp assets/engine-loop.js ./my-loop/engine-loop.js
 cp assets/starter-loop/index.html ./my-loop/index.html
-# or: cp assets/starter-runner/index.html ./my-loop/index.html
+# or: cp assets/starter-runner/index.html ./my-loop/index.html   # street cross
+# or: cp assets/starter-nature/index.html ./my-loop/index.html   # waterfall + dog
 ```
 
 ```text
@@ -74,7 +68,7 @@ window.PP_LOOP = { originY: 10, shadowX: 1.3, shadowY: -0.12, loopLen: 8 };
 
 Open the file directly or through any static server. No build step, no dependency. Keep it that way.
 
-The starters: `starter-loop` is a morning dock (two seated figures breathing, rods bobbing, water streaks, circling fish, one ripple ring). `starter-runner` is a street cross (headband runner on a 4-key `walkPose` gait, vendor flip, swaying lantern, dust + glow). Read the closest one end to end before changing it.
+The starters: `starter-loop` is a morning dock (seated breath, shimmer, circling fish). `starter-runner` is a street cross (4-key `walkPose` gait, flip beats, lantern). `starter-nature` is a falls glade (waterfall + pond + pines/bamboo + barking dog + petals). Copy the closest one to the prompt's archetypes, then change the subject.
 
 ## 3. Set the scene
 
@@ -193,7 +187,8 @@ Check, in order:
 1. **It boots.** No console errors, canvas 360x280, white outside edge.
 2. **It wraps.** Pixel-diff frame 0 vs frame `LOOP_LEN`: identical. Report the diff count, not "it loops".
 3. **It reads.** Screenshot 1:1 and full page, then run the seven checks at the end of [visual-rules-loops.md](references/visual-rules-loops.md).
-4. **It survives.** Reduced-motion freezes plants. Resize keeps integer scale. Hidden tab resumes without a jump (`dt` clamped `0.04`).
+4. **It fills.** Run `measureFill()` after `draw()`: island 12–40%, tallest actor 25–80px. Fix with `HALF_X/Y` and figure scale, never canvas zoom. See [references/composition.md](references/composition.md).
+5. **It survives.** Reduced-motion freezes plants. Resize keeps integer scale. Hidden tab resumes without a jump (`dt` clamped `0.04`).
 
 ## 8. Still frames
 
@@ -213,10 +208,14 @@ The style is a direction, not assets. Take the camera, dither, ramps and edge. D
 
 - [references/visual-rules-loops.md](references/visual-rules-loops.md): the ten rules and the screenshot check.
 - [references/loop-techniques.md](references/loop-techniques.md): bake/draw order, seamless-time math, water, grass, export, pitfalls.
+- [references/subjects.md](references/subjects.md): any-prompt archetype map — terrain, water, vegetation, structures, actors, creatures, weather, FX, movie-scene mappings.
+- [references/composition.md](references/composition.md): measured fill % (court 36 / dock 27 / stall 26 / juggler 14), framing presets, diagonal bias, `measureFill`.
+- [references/palettes.md](references/palettes.md): sampled packs, contrast law, water vs lava.
 - [references/figure-rig.md](references/figure-rig.md): proportions, walkPose gait, arm poses, secondary motion.
 - [references/staging-logic.md](references/staging-logic.md): prop anchors, road stripes, paths, ground sizing.
 - [references/anime-fx.md](references/anime-fx.md): style cues, halo/glow, rain/steam/heat (never copied characters).
 - [references/loop-beats.md](references/loop-beats.md): 4-beat choreography for up to 3 movers.
-- `assets/engine-loop.js`: the renderer, do not edit per loop.
+- `assets/engine-loop.js`: the renderer + any-subject kit, do not edit per loop.
 - `assets/starter-loop/index.html`: the worked morning-dock loop.
 - `assets/starter-runner/index.html`: the worked street-runner loop.
+- `assets/starter-nature/index.html`: the worked falls-glade + barking-dog loop.

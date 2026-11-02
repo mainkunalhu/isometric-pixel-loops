@@ -7,28 +7,30 @@ Inspired by the renderer rules of Pixel Plays (camera, dither, ramps, shadows) b
 ## Contents
 
 ```text
-isometric-pixel-loops/
-  SKILL.md                           # v1.1: walk cycles, staging, anime FX, beats
-  assets/engine-loop.js              # shared renderer + walkPose/lagAngle/spikyHair/headband/haloDots/glowDots/roadStripes
-  assets/starter-loop/index.html     # morning dock (seated breath, shimmer, circling fish)
-  assets/starter-runner/index.html   # street runner (4-key gait, flip beats, lantern sway)
-  references/visual-rules-loops.md
-  references/loop-techniques.md
-  references/figure-rig.md           # proportions, walkPose gait, arm poses, secondary motion
-  references/staging-logic.md        # prop anchors, roadStripes, paths, ground sizing
-  references/anime-fx.md             # style cues only, halo/glow, rain/steam/heat
-  references/loop-beats.md           # 4-beat choreography, max 3 movers
-  scripts/check-loop.mjs
+isometric-pixel-loops/                      # v2.0: any prompt → archetypes → recipes
+  SKILL.md
+  assets/engine-loop.js                    # renderer + any-subject kit (terrain, plants, water, weather, dog, FX, measureFill)
+  assets/starter-loop/index.html           # morning dock (seated breath, shimmer, circling fish)
+  assets/starter-runner/index.html         # street cross (walkPose gait, flip beats, lantern)
+  assets/starter-nature/index.html         # falls glade (waterfall + pond + pines + barking dog + petals)
+  references/subjects.md                   # archetype map + movie-scene mappings
+  references/composition.md                # measured fills, framing presets, measureFill
+  references/palettes.md                   # sampled packs + contrast law
+  references/figure-rig.md                 # walkPose gait, arm poses, secondary motion
+  references/staging-logic.md              # prop anchors, roadStripes, paths
+  references/anime-fx.md                   # style cues only, halo/glow, rain/steam/heat
+  references/loop-beats.md                 # 4-beat choreography, max 3 movers
+  scripts/check-loop.mjs                   # wrap + staging + subject-coverage checks
 ```
 
 ## Use
 
 ```bash
 cp assets/engine-loop.js ./my-loop/engine-loop.js
-cp assets/starter-loop/index.html ./my-loop/index.html
+cp assets/starter-nature/index.html ./my-loop/index.html
+# or the dock: cp assets/starter-loop/index.html ./my-loop/index.html
 # or the runner: cp assets/starter-runner/index.html ./my-loop/index.html
-# edit PP_LOOP { originY, shadowX, shadowY, loopLen }, groundColor, bake, drawActors
-node scripts/check-loop.mjs ./my-loop/index.html assets/engine-loop.js
+# decompose ANY prompt first: terrain → water → plants → structure → actors → beats (see SKILL.md §1)
 # open ./my-loop/index.html directly, or: npx serve .
 # record webm button -> ffmpeg -i loop.webm -pix_fmt yuv420p loop.mp4
 ```

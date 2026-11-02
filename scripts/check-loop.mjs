@@ -35,6 +35,30 @@ mustNot(/aria-live="polite".*score|id="score"/, 'loops must not ship a game scor
 mustNot(/keydown.*Space|pointerdown.*press\(\)/s, 'loops must not wire press/release gameplay input');
 if (/AudioContext|new Audio/.test(html)) warn.push('audio in a loop: keep it optional and off by default');
 
+// 4. any-subject coverage: prompt keywords with unused helpers
+const needHelpers = [
+  [/waterfall|falls\b/i, /drawFall/, 'waterfall needs drawFall() + foam pool + mist'],
+  [/\briver\b/i, /makeFlow|drawFlow/, 'river needs makeFlow()/drawFlow() directional flow'],
+  [/\bdog\b|bark|puppy/i, /[^a-zA-Z]dog\s*\(/, 'dog needs dog() with barkBeat + tail wag'],
+  [/\bcat\b|kitten/i, /[^a-zA-Z]dog\s*\(/, 'cat: reuse dog() with sit:true, scale 0.6, no bark'],
+  [/\brain\b|storm/i, /drawRain/, 'rain needs drawRain() 80 drops, no accumulation'],
+  [/\bsnow\b|winter|blizzard/i, /drawSnow|PAL\.snow/, 'snow needs drawSnow() + PAL.snow + warm figure palette'],
+  [/\bpetal\b|blossom|leaves falling|autumn/i, /drawPetals/, 'falling petals/leaves need drawPetals() wrapped'],
+  [/\bbird\b|seagull|crow/i, /drawBirds/, 'birds need drawBirds() 2-frame flap, wrapped flight'],
+  [/\bfire\b|torch|bonfire|volcano|erupt/i, /drawFire/, 'fire needs drawFire() + drawSmoke() above'],
+  [/\bsmoke\b|mist\b|steam/i, /drawSmoke|drawFall/, 'smoke/mist/steam needs drawSmoke() period-locked rise'],
+  [/\bglow\b|energy|chakra|aura|portal/i, /glowDots|haloDots/, 'energy needs glowDots() + haloDots() first'],
+  [/\bpalm\b|tropic/i, /growPalm/, 'palms need growPalm() leaning over water'],
+  [/\bbamboo\b/i, /growBamboo/, 'bamboo needs growBamboo() clump'],
+  [/\bpine\b|conifer|mountain/i, /growPine/, 'conifers need growPine() tiers'],
+  [/\bbeach|sand\b|desert/i, /LOOP_KINDS|PAL\.sand/, 'sand needs LOOP_KINDS.SAND + PAL.sand + wet shore band'],
+  [/\bbridge\b/i, /rail|capsule/, 'bridge needs arc steps + 2 capsule rails over water/road'],
+  [/\bhouse\b|hut|cabin/i, /ridge|gabl|roof slab/i, 'house needs 4 walls + gabled roof + dark door inset'],
+];
+for (const [kw, helper, hint] of needHelpers) {
+  if (kw.test(html) && !helper.test(html)) warn.push(hint);
+}
+
 // 3. staging + figure quality (warnings, not failures)
 const figureCalls = (html.match(/figure\s*\(/g) || []).length;
 if (figureCalls > 4) warn.push(`many figure() calls (${figureCalls}): max 3 movers, test each actor solo`);
