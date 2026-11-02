@@ -1,11 +1,11 @@
 ---
 name: isometric-pixel-loops
-description: Build seamless isometric pixel-diorama loop animations (360x280 software rasteriser, one small place on white, 4-10s ambient loop, no input). Use when asked for an isometric pixel animation, pixel loop, ambient video, diorama video, looping pixel scene, or a video version of the pixel-diorama style. Ships a timeline-only MIT engine, a working fishing-dock starter loop, the visual rules, and loop technique recipes for water, grass, figures and seamless export.
+description: Build seamless isometric pixel-diorama loop animations (360x280 software rasteriser, one small place on white, 4-10s ambient loop, no input). Use when asked for an isometric pixel animation, pixel loop, ambient video, diorama video, looping pixel scene, anime-style pixel loop, or a video version of the pixel-diorama style. Ships a timeline-only MIT engine, two starter loops (fishing dock, street runner), the visual rules, and loop recipes for walk cycles, figure rigs, staging, anime FX and seamless export.
 license: MIT
 compatibility: node >= 18, modern browser with canvas, ffmpeg optional for mp4 export
 metadata:
   author: isometric-pixel-loops
-  version: "1.0"
+  version: "1.1"
   scope: animation-loop
   platforms: [claude-code, cursor, antigravity, zed, opencode, windsurf, copilot, skills.sh]
 ---
@@ -17,10 +17,11 @@ One small place on white, one readable motion, looped so frame 0 equals frame N.
 Five ways it fails:
 
 - **A scene, not a place.** No edge, no ground plane, nowhere to stand. The diorama must feel like a tabletop model.
-- **No motion.** Pretty pixels with nothing alive. Every loop is one actor motion plus wind/water.
+- **No motion.** Pretty pixels with nothing alive. Every loop is actor motion plus wind/water.
 - **A cut, not a loop.** Motion that jumps at the wrap. Everything must be a closed function of loop time.
 - **Detail at the wrong scale.** 360 by 280 holds ~100,000 pixels. A window is 8px. A face is 4. Finer detail reads as noise.
-- **A copied subject.** Do not rebuild the starter fishing dock, the five Pixel Plays games, or the four reference juggle/fish/stall/court scenes. New loops must be describable without reference to them.
+- **A floating prop.** Stripes that read as stairs, roofs with no posts, orphan crates. Every prop needs an anchor; see [references/staging-logic.md](references/staging-logic.md).
+- **A copied subject.** Do not rebuild the starters, the five Pixel Plays games, named anime characters, villages, or jutsu. Style cues only, never assets.
 
 ## 0. Choose the output
 
@@ -34,17 +35,21 @@ All three use the same engine and visual rules. Read [references/visual-rules-lo
 
 ## 1. Pick one readable motion
 
-Silhouette-readable from a fixed camera: bob, breathe, drink, paddle, sweep, pour, stack, swing, drip, shimmer pass.
+Silhouette-readable from a fixed camera: walk, run, wipe, flip, fan, seal set, paddle, sweep, pour, swing, drip, shimmer pass.
 
 A good loop motion has all three:
 
-1. **One actor.** One figure or object moves; everything else is wind/water.
+1. ** readable silhouette.** Limbs separate from torso at 1:1. Test: squint — the action still reads.
 2. **A visible cycle.** Leaves the hand, crosses the place, returns. The viewer can time it within 2 seconds.
 3. **No accumulation.** Nothing spawns, scores, or moves permanently. Rings/fish/streaks wrap.
 
-Test: say the loop in one sentence with its period. "Two figures breathe and their rods bob while fish circle underneath, 8 seconds." If it needs "and then", it is two loops.
+Up to 3 movers: 1 hero + 2 ambient, choreographed on 4 beats (see [references/loop-beats.md](references/loop-beats.md)). Each beat peaks one action; test each actor solo.
 
-Fits: casting ripple rings, bucket drip, lantern sway, laundry line ripple, crate stack breathe, paddle dip, fish circle pass, grass gust wave.
+Test: say the loop in one sentence with its period. "A headband runner crosses while a vendor flips and a lantern sways, 8 seconds." If it needs "and then", it is two loops.
+
+Figures use [references/figure-rig.md](references/figure-rig.md): `walkPose()` 4-key gait, quantized heads, arm pose library, `lagAngle` secondary motion. Anime style cues (never copied characters) via [references/anime-fx.md](references/anime-fx.md). Every prop anchored per [references/staging-logic.md](references/staging-logic.md).
+
+Fits: walk/run cross, wipe/flip cycle, seal-hold-release, ripple rings, lantern sway, grill shimmer.
 Does not fit: camera moves, cuts, dialogue, menus, close-ups, per-pixel precision.
 
 ## 2. Start from the starter
@@ -52,6 +57,7 @@ Does not fit: camera moves, cuts, dialogue, menus, close-ups, per-pixel precisio
 ```bash
 cp assets/engine-loop.js ./my-loop/engine-loop.js
 cp assets/starter-loop/index.html ./my-loop/index.html
+# or: cp assets/starter-runner/index.html ./my-loop/index.html
 ```
 
 ```text
@@ -68,7 +74,7 @@ window.PP_LOOP = { originY: 10, shadowX: 1.3, shadowY: -0.12, loopLen: 8 };
 
 Open the file directly or through any static server. No build step, no dependency. Keep it that way.
 
-The starter is a morning dock: two seated figures breathing, rods bobbing, water streaks scrolling, fish circling, one ripple ring. About 200 lines. Read it end to end before changing it.
+The starters: `starter-loop` is a morning dock (two seated figures breathing, rods bobbing, water streaks, circling fish, one ripple ring). `starter-runner` is a street cross (headband runner on a 4-key `walkPose` gait, vendor flip, swaying lantern, dust + glow). Read the closest one end to end before changing it.
 
 ## 3. Set the scene
 
@@ -206,6 +212,11 @@ The style is a direction, not assets. Take the camera, dither, ramps and edge. D
 ## Reference
 
 - [references/visual-rules-loops.md](references/visual-rules-loops.md): the ten rules and the screenshot check.
-- [references/loop-techniques.md](references/loop-techniques.md): bake/draw order, seamless-time math, water, grass, figure recipes, export, pitfalls.
+- [references/loop-techniques.md](references/loop-techniques.md): bake/draw order, seamless-time math, water, grass, export, pitfalls.
+- [references/figure-rig.md](references/figure-rig.md): proportions, walkPose gait, arm poses, secondary motion.
+- [references/staging-logic.md](references/staging-logic.md): prop anchors, road stripes, paths, ground sizing.
+- [references/anime-fx.md](references/anime-fx.md): style cues, halo/glow, rain/steam/heat (never copied characters).
+- [references/loop-beats.md](references/loop-beats.md): 4-beat choreography for up to 3 movers.
 - `assets/engine-loop.js`: the renderer, do not edit per loop.
 - `assets/starter-loop/index.html`: the worked morning-dock loop.
+- `assets/starter-runner/index.html`: the worked street-runner loop.

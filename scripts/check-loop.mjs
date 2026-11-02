@@ -35,6 +35,13 @@ mustNot(/aria-live="polite".*score|id="score"/, 'loops must not ship a game scor
 mustNot(/keydown.*Space|pointerdown.*press\(\)/s, 'loops must not wire press/release gameplay input');
 if (/AudioContext|new Audio/.test(html)) warn.push('audio in a loop: keep it optional and off by default');
 
+// 3. staging + figure quality (warnings, not failures)
+const figureCalls = (html.match(/figure\s*\(/g) || []).length;
+if (figureCalls > 4) warn.push(`many figure() calls (${figureCalls}): max 3 movers, test each actor solo`);
+if (/(walker|runner|walking|running|footstep|gait|marching|crossing|kid)\b/i.test(html) && !/walkPose/.test(html)) warn.push('moving figure without walkPose(): gait will read as sliding — use the 4-key walkPose gait');
+if (!/castShadow/.test(html)) warn.push('no castShadow: every prop and actor needs a grounded shadow');
+if (/(crossing|crosswalk|zebra|road band)/i.test(html) && !/roadStripes/.test(html)) warn.push('crossing without roadStripes(): stripes must be inset in a road band or they read as stairs');
+
 if (enginePath) {
   const eng = fs.readFileSync(enginePath, 'utf8');
   if (!/const\s+LOOP_LEN/.test(eng)) fail.push('engine-loop.js must export LOOP_LEN');

@@ -8,11 +8,16 @@ Inspired by the renderer rules of Pixel Plays (camera, dither, ramps, shadows) b
 
 ```text
 isometric-pixel-loops/
-  SKILL.md
-  assets/engine-loop.js          # shared renderer, do not edit per loop
-  assets/starter-loop/index.html # morning-dock loop (seated fishers, shimmer, circling fish)
+  SKILL.md                           # v1.1: walk cycles, staging, anime FX, beats
+  assets/engine-loop.js              # shared renderer + walkPose/lagAngle/spikyHair/headband/haloDots/glowDots/roadStripes
+  assets/starter-loop/index.html     # morning dock (seated breath, shimmer, circling fish)
+  assets/starter-runner/index.html   # street runner (4-key gait, flip beats, lantern sway)
   references/visual-rules-loops.md
   references/loop-techniques.md
+  references/figure-rig.md           # proportions, walkPose gait, arm poses, secondary motion
+  references/staging-logic.md        # prop anchors, roadStripes, paths, ground sizing
+  references/anime-fx.md             # style cues only, halo/glow, rain/steam/heat
+  references/loop-beats.md           # 4-beat choreography, max 3 movers
   scripts/check-loop.mjs
 ```
 
@@ -21,6 +26,7 @@ isometric-pixel-loops/
 ```bash
 cp assets/engine-loop.js ./my-loop/engine-loop.js
 cp assets/starter-loop/index.html ./my-loop/index.html
+# or the runner: cp assets/starter-runner/index.html ./my-loop/index.html
 # edit PP_LOOP { originY, shadowX, shadowY, loopLen }, groundColor, bake, drawActors
 node scripts/check-loop.mjs ./my-loop/index.html assets/engine-loop.js
 # open ./my-loop/index.html directly, or: npx serve .

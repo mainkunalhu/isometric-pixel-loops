@@ -348,3 +348,79 @@ function fit() {
   canvas.style.width = W * scale + 'px';
   canvas.style.height = H * scale + 'px';
 }
+
+// ---------- v1.1: walk cycle, secondary motion, anime FX ----------
+// Quantized 4-key gait. phase 0..1 around the loop. Returns a pose for figure().
+// stance swings +/-swing, opposite arms ∓swing*armSwing, 2px foot lift baked
+// into crouch so feet never slide: contact/pass/down/up are discrete, not eased.
+function walkPose(t, opts = {}) {
+  const { phase = 0, swing = 0.13, armSwing = 3, crouchBase = 0.06, leanBase = 0.08 } = opts;
+  const k = ((t % LOOP_LEN) / LOOP_LEN + phase) % 1;
+  const step = Math.floor(k * 4) % 4; // 0 contact, 1 pass, 2 down, 3 up
+  const dir = step < 2 ? 1 : -1;
+  const lift = step === 1 || step === 3 ? 0.05 : 0;
+  return {
+    stance: dir * swing,
+    crouch: crouchBase + lift,
+    lean: leanBase,
+    armR: -dir * swing * armSwing,
+    armL: dir * swing * armSwing,
+    scale: opts.scale,
+    z: opts.z,
+  };
+}
+
+// Secondary motion lags one 8fps tick so hair/cloth trails the body seamlessly.
+function lagAngle(t, ticks = 1) {
+  return loopAngle(t - ticks / WIND_FPS, 0);
+}
+
+// Spiky anime hair: 5 rough spheres around the head top. Call after figure()
+// using the head center; keeps silhouette readable at 5px+.
+function spikyHair(hx, hy, hz, color, s = 1) {
+  const spikes = [[0, 0, 0.16, 0.16], [-0.16, 0.08, 0.1, 0.11], [0.16, 0.08, 0.1, 0.11], [-0.08, -0.12, 0.12, 0.1], [0.08, -0.12, 0.12, 0.1]];
+  for (const [dx, dy, dz, r] of spikes) sphere(hx + dx * s, hy + dy * s, hz + dz * s, r * s, color, 'rough');
+}
+
+// Headband: metal plate (gloss rect via 3 dots) + two tails rippling with lagAngle.
+function headband(hx, hy, hz, t, plateColor = [200, 200, 210]) {
+  const p = project(hx, hy, hz + 0.1);
+  drawDots([[p.sx - 1, p.sy], [p.sx, p.sy], [p.sx + 1, p.sy]], rgb(...plateColor));
+  const a = lagAngle(t);
+  for (let k = 1; k <= 3; k++) {
+    const sway = Math.sin(a * 2 + k * 0.9) * 0.12 * k;
+    plot(hx - 0.2 - k * 0.12, hy - 0.1 + sway * 0.3, hz + 0.05 - k * 0.1 + sway * 0.1, rgb(60, 60, 120));
+  }
+}
+
+// White halo under signal/glow dots so FX separate from busy detail.
+function haloDots(points) {
+  const halo = [];
+  for (const [x, y] of points) for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) halo.push([x + dx, y + dy]);
+  drawDots(halo, rgb(255, 255, 255));
+}
+
+// Energy glow: pulsing ring + core, period-locked. color e.g. [120, 200, 255].
+function glowDots(cx, cy, cz, t, color, baseR = 3, pulse = 4) {
+  const rr = baseR + ((t % LOOP_LEN) / LOOP_LEN) * pulse;
+  const p = project(cx, cy, cz);
+  const ring = [];
+  for (let k = 0; k < 20; k++) {
+    if (hash(k, Math.floor(rr)) > 1 - (rr % 1) * 0.5) continue;
+    const a = k / 20 * 6.283;
+    ring.push([p.sx + Math.cos(a) * rr, p.sy + Math.sin(a) * rr * 0.5]);
+  }
+  haloDots(ring);
+  drawDots(ring, rgb(...color));
+  drawDots([[p.sx, p.sy]], rgb(255, 255, 255));
+}
+
+// Road crossing stripes inset in a road band (never floating bars): call in
+// bake() after ground. cx,cy center, w length along x, stripes across.
+function roadStripes(cx, cy, w, stripeW = 0.55, gap = 0.45, color = [225, 222, 214]) {
+  const n = Math.floor(w / (stripeW + gap));
+  for (let k = 0; k < n; k++) {
+    const x0 = cx - w / 2 + k * (stripeW + gap);
+    box(x0, cy - 0.9, 0.02, x0 + stripeW, cy + 0.9, 0.06, color, k * 7.3);
+  }
+}
