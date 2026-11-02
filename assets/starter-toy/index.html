@@ -107,7 +107,7 @@ function update(dt) {
   } else if (G.act === 'appear' && actDone()) { enter('greet'); say(LINES.greet); }
   else if (G.act === 'greet' && G.locked && G.time - G.scriptStart > 4.6) { enter('point'); }
   else if (G.act === 'point' && actDone()) { G.locked = false; G.met = true; enter('greet'); }
-  else if (G.met && far > 6) { enter('farewell'); }
+  else if (G.met && far > 6 && G.act !== 'farewell') { enter('farewell'); }
   else if (G.act === 'farewell' && actDone()) { enter('hidden'); G.met = false; G.script = []; }
   const want = (G.act === 'hidden' || G.act === 'farewell') ? 0 : 1;
   G.vis = clamp(G.vis + (want - G.vis) * Math.min(1, dt * 1.2), 0, 1);
