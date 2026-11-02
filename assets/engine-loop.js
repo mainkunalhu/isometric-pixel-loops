@@ -3,7 +3,9 @@
 // hue-shifted ramps, ordered dither, long violet shadows. Timeline-only, no input.
 // A loop page sets window.PP_LOOP before loading this file, then draws through these globals.
 const LOOP_CFG = window.PP_LOOP || {};
-const W = 360, H = 280, S = 10;
+// Stage size is a preset, not a constant: 360x280@10 diorama or 960x540@26 cinematic.
+// Set via PP_LOOP {w, h, unit}. Defaults keep every existing starter pixel-identical.
+const W = LOOP_CFG.w || 360, H = LOOP_CFG.h || 280, S = LOOP_CFG.unit || 10;
 const SIN = 0.5, COS = Math.sqrt(3) / 2, R2 = Math.SQRT2;
 const TAU = Math.PI * 2;
 const OX = W / 2, OY = H / 2 + (LOOP_CFG.originY || 0);

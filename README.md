@@ -7,12 +7,14 @@ Inspired by the renderer rules of Pixel Plays (camera, dither, ramps, shadows) b
 ## Contents
 
 ```text
-isometric-pixel-loops/                      # v2.0: any prompt → archetypes → recipes
-  SKILL.md
-  assets/engine-loop.js                    # renderer + any-subject kit (terrain, plants, water, weather, dog, FX, measureFill)
+isometric-pixel-loops/                      # v3.0: loops + walk-to-trigger toys
+  SKILL.md                                 # two tracks (loop/toy), stage presets, worksheet
+  assets/engine-loop.js                    # renderer (w/h/unit configurable) + any-subject kit
+  assets/pixel.js                          # worker-safe pure core (no DOM)
   assets/starter-loop/index.html           # morning dock (seated breath, shimmer, circling fish)
   assets/starter-runner/index.html         # street cross (walkPose gait, flip beats, lantern)
-  assets/starter-nature/index.html         # falls glade (waterfall + pond + pines + barking dog + petals)
+  assets/starter-nature/index.html         # falls glade (waterfall + pond + pines + barking dog)
+  assets/starter-toy/index.html            # lantern keeper (walk-to-trigger acts + subtitles)
   references/subjects.md                   # archetype map + movie-scene mappings
   references/composition.md                # measured fills, framing presets, measureFill
   references/palettes.md                   # sampled packs + contrast law
@@ -20,7 +22,11 @@ isometric-pixel-loops/                      # v2.0: any prompt → archetypes �
   references/staging-logic.md              # prop anchors, roadStripes, paths
   references/anime-fx.md                   # style cues only, halo/glow, rain/steam/heat
   references/loop-beats.md                 # 4-beat choreography, max 3 movers
-  scripts/check-loop.mjs                   # wrap + staging + subject-coverage checks
+  references/scrolling-camera.md           # wide-bake + shifted window
+  references/acts-subtitles.md             # acts table, locks, lines, toy hook
+  references/worker-bake.md                # heavy bakes in workers
+  references/neon-night.md                 # dark-void palette, glow, fog, reflections
+  scripts/check-loop.mjs                   # loop + toy rules, subject-coverage checks
 ```
 
 ## Use

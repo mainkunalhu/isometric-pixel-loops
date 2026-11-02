@@ -10,13 +10,15 @@ if (!htmlPath) {
 const fail = [];
 const warn = [];
 const html = fs.readFileSync(htmlPath, 'utf8');
+// Toys (PP_TOY/__toy) run acts instead of a seamless wrap: loop-only rules are gated below.
+const isToy = /window\.PP_TOY|window\.__toy/.test(html);
 const must = (re, msg) => { if (!re.test(html)) fail.push(msg); };
 const mustNot = (re, msg) => { if (re.test(html)) fail.push(msg); };
 
 // 1. loop config
 must(/window\.PP_LOOP\s*=/, 'missing window.PP_LOOP config');
 must(/loopLen\s*:\s*[6-9]|loopLen\s*:\s*10/, 'PP_LOOP.loopLen should be 6-10s (default 8)');
-must(/window\.__loop\s*=/, 'missing window.__loop test hook { G, LOOP_LEN, step }');
+if (!isToy) must(/window\.__loop\s*=/, 'missing window.__loop test hook { G, LOOP_LEN, step }');
 must(/function\s+bake\s*\(/, 'missing bake()');
 must(/function\s+draw\s*\(/, 'missing draw()');
 must(/pix\.set\(bakedPix\)/, 'draw() must restore pix.set(bakedPix)');
@@ -29,10 +31,19 @@ must(/shadeEdges\(\)/, 'missing shadeEdges()');
 must(/putImageData/, 'missing ctx.putImageData');
 must(/requestAnimationFrame/, 'missing rAF loop');
 
-// 2. no game systems in a loop
-mustNot(/localStorage/, 'loops must not use localStorage (game persistence)');
-mustNot(/aria-live="polite".*score|id="score"/, 'loops must not ship a game score HUD');
-mustNot(/keydown.*Space|pointerdown.*press\(\)/s, 'loops must not wire press/release gameplay input');
+// 2. no game systems in a loop — skipped for toys (PP_TOY): toys have one
+// input, one verb, and an acts machine instead of a seamless wrap.
+if (!isToy) {
+  mustNot(/localStorage/, 'loops must not use localStorage (game persistence)');
+  mustNot(/aria-live="polite".*score|id="score"/, 'loops must not ship a game score HUD');
+  mustNot(/keydown.*Space|pointerdown.*press\(\)/s, 'loops must not wire press/release gameplay input');
+} else {
+  must(/enter\s*\(/, 'toys need an acts table with enter(act)');
+  must(/locked/, 'toys need a locked flag freezing input during the performance');
+  must(/aria-live="polite"/, 'toys must announce lines via a polite live region');
+  must(/window\.__toy/, 'toys need window.__toy test hook { G, ACTS, enter, step }');
+  mustNot(/localStorage/, 'toys must not use localStorage (game persistence)');
+}
 if (/AudioContext|new Audio/.test(html)) warn.push('audio in a loop: keep it optional and off by default');
 
 // 4. any-subject coverage: prompt keywords with unused helpers

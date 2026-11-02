@@ -1,11 +1,11 @@
 ---
 name: isometric-pixel-loops
-description: Build any seamless isometric pixel-diorama loop animation (360x280 software rasteriser, one small place on white, 4-10s ambient loop, no input) — nature, creatures, movie/anime scenes, shops, weather. Use when asked for an isometric pixel animation, pixel loop, ambient video, diorama video, looping pixel scene, anime-style pixel loop, pixel waterfall/forest/beach/dog/rain, or any subject in the pixel-diorama style. Ships a timeline-only MIT engine with terrain/vegetation/water/weather/creature helpers, three starter loops, the visual rules, and recipes for walk cycles, staging, composition, palettes, anime FX and seamless export.
+description: Build seamless isometric pixel-diorama loops AND walk-to-trigger toys (software rasteriser, one small place — white diorama or dark cinematic, ambient loop or one-input performance). Use when asked for an isometric pixel animation, pixel loop, pixel toy, ambient video, diorama video, looping pixel scene, anime-style pixel loop, pixel waterfall/forest/beach/dog/rain, neon-night scene, walkable vignette, or any subject in the pixel-diorama style. Ships a timeline-only MIT engine with terrain/vegetation/water/weather/creature/FX helpers, worker-safe pixel core, four starters, and recipes for walk cycles, staging, composition, palettes, acts, scrolling cameras, neon night and seamless export.
 license: MIT
 compatibility: node >= 18, modern browser with canvas, ffmpeg optional for mp4 export
 metadata:
   author: isometric-pixel-loops
-  version: "2.0"
+  version: "3.0"
   scope: animation-loop
   platforms: [claude-code, cursor, antigravity, zed, opencode, windsurf, copilot, skills.sh]
 ---
@@ -28,10 +28,22 @@ Five ways it fails:
 | Ask | Build | Section |
 | --- | --- | --- |
 | Seamless loop page | Starter loop + timeline, runs forever | 1 to 7 |
+| Walk-to-trigger toy | Starter toy + acts, one input one verb | 1, 10 |
 | Still frame | One baked frame, no rAF, PNG export | 8 |
 | Loop embedded in a site | Loop canvas paused off-screen, same engine | 9 |
 
-All three use the same engine and visual rules. Read [references/visual-rules-loops.md](references/visual-rules-loops.md) before scene code.
+All tracks share the engine and visual rules. Read [references/visual-rules-loops.md](references/visual-rules-loops.md) before scene code.
+
+## Stage presets
+
+`PP_LOOP` takes stage dimensions — resolution is a preset, not a constant:
+
+```js
+window.PP_LOOP = { w: 360, h: 280, unit: 10, originY: 10 };   // diorama (default)
+window.PP_LOOP = { w: 960, h: 540, unit: 26, originY: 55 };    // cinematic
+```
+
+Diorama: white page, ambient loop. Cinematic: near-black void page (`#07060b`), neon-night kit ([references/neon-night.md](references/neon-night.md)), acts or scrolling camera. Same projection math, different scale.
 
 ## 1. Decompose the prompt into archetypes (do this first)
 
@@ -198,9 +210,19 @@ A still is the same scene with no loop. Delete `update`/`frame`, keep `bake()`, 
 
 One canvas per visible scene, paused with `IntersectionObserver` when off screen. Caption in small monospace at the edges, never a card over the diorama. Honor `prefers-reduced-motion` (starter already freezes via `windTime`).
 
-## 10. Originality and licence
+## 10. Toys: walk to trigger
 
-`assets/engine-loop.js` is MIT. Ship it with new loops. Do not ship music you do not own.
+When the ask is interactive, copy `assets/starter-toy/` instead of a loop starter and declare `window.PP_TOY = true`:
+
+- One input (arrows/click to walk, or tap), one verb (approach). `G.locked = true` during the performance.
+- Acts table with `enter(act)`/`actDone()` + subtitle lines on timers via polite live region — see [references/acts-subtitles.md](references/acts-subtitles.md).
+- Scrolling worlds: bake wide once, shift the window per [references/scrolling-camera.md](references/scrolling-camera.md).
+- Heavy bakes (ray-marched figures, cities): `assets/pixel.js` + workers per [references/worker-bake.md](references/worker-bake.md).
+- Checker runs toy rules for `PP_TOY` pages: acts, lock, live region, `window.__toy` hook.
+
+## 11. Originality and licence
+
+`assets/engine-loop.js` and `assets/pixel.js` are MIT. Ship them with new loops and toys. Do not ship music you do not own.
 
 The style is a direction, not assets. Take the camera, dither, ramps and edge. Do not rebuild the starter dock, the Pixel Plays game subjects, or the juggle/fish/stall/court reference scenes as your loop subject.
 
@@ -215,7 +237,13 @@ The style is a direction, not assets. Take the camera, dither, ramps and edge. D
 - [references/staging-logic.md](references/staging-logic.md): prop anchors, road stripes, paths, ground sizing.
 - [references/anime-fx.md](references/anime-fx.md): style cues, halo/glow, rain/steam/heat (never copied characters).
 - [references/loop-beats.md](references/loop-beats.md): 4-beat choreography for up to 3 movers.
+- [references/scrolling-camera.md](references/scrolling-camera.md): wide-bake + shifted window, depth correction, patch trick.
+- [references/acts-subtitles.md](references/acts-subtitles.md): acts table, locks, line timers, live regions, toy test hook.
+- [references/worker-bake.md](references/worker-bake.md): pixel.js in workers, job queue, ready gates.
+- [references/neon-night.md](references/neon-night.md): dark-void palette, glow kit, fog, wet reflections, lit rain.
 - `assets/engine-loop.js`: the renderer + any-subject kit, do not edit per loop.
+- `assets/pixel.js`: worker-safe pure core (no DOM), mirrored math for heavy bakes.
 - `assets/starter-loop/index.html`: the worked morning-dock loop.
 - `assets/starter-runner/index.html`: the worked street-runner loop.
 - `assets/starter-nature/index.html`: the worked falls-glade + barking-dog loop.
+- `assets/starter-toy/index.html`: the worked lantern-keeper walk-to-trigger toy.
