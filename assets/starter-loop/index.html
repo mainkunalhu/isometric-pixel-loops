@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Morning Dock — isometric pixel loop</title>
+<style>
+  :root { --ink: #1c1b19; --muted: #8b877f; --paper: #fff; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink); }
+  body { font: 13px/1.35 ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace; overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: grid; place-items: center; }
+  canvas { display: block; image-rendering: pixelated; outline: none; }
+  #top { position: fixed; top: max(14px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); pointer-events: none; }
+  #top b { font-size: 13px; font-weight: 600; }
+  #top span { color: var(--muted); }
+  #bottom { position: fixed; left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+  #caption { color: var(--muted); }
+  #tools { display: flex; gap: 4px; }
+  button { font: inherit; color: var(--muted); background: none; border: 0; padding: 10px; margin: -10px; cursor: pointer; }
+  button:hover, button:focus-visible { color: var(--ink); }
+  button[disabled] { opacity: .4; cursor: default; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" aria-label="Seamless pixel loop: two figures fishing from a small wooden dock."></canvas></div>
+<div id="top"><b>morning dock</b> <span>· 8s seamless loop</span></div>
+<div id="bottom">
+  <div id="caption">water shimmers · rods bob · fish pass underneath</div>
+  <div id="tools">
+    <button id="png" type="button">png</button>
+    <button id="rec" type="button">record webm</button>
+  </div>
+</div>
+<script>window.PP_LOOP = { originY: 10, shadowX: 1.3, shadowY: -0.12, loopLen: 8 };</script>
+<script src="../engine-loop.js"></script>
+<script>
+'use strict';
+// Morning Dock: an original seamless ambient loop on the loop renderer.
+// No input, no score. Everything is a closed function of loop time.
+
+const KIND_WATER = 1;
+const HALF_X = 14.5, HALF_Y = 8.2;
+const DOCK = { x: -3.5, y: 0.5, w: 7.5, d: 2.2, h: 0.9 };
+const WATER_TONES = [[44, 104, 112], [52, 116, 122], [62, 130, 132], [78, 146, 142]];
+const WOOD = [138, 106, 70], WOOD_DARK = [104, 80, 54];
+const FIG_A = { shirt: [178, 84, 66], stripe: [178, 84, 66], legs: [52, 60, 84], hair: [46, 34, 28], skin: [214, 162, 124] };
+const FIG_B = { shirt: [90, 128, 150], stripe: [90, 128, 150], legs: [64, 62, 58], hair: [120, 120, 118], skin: [198, 148, 112] };
+
+const G = { time: 0 };
+
+function groundColor(x, y, ix, iy, i) {
+  const edge = Math.pow(Math.pow(Math.abs(x) / HALF_X, 4) + Math.pow(Math.abs(y) / HALF_Y, 4), 0.25)
+    + (noise(x * 1.3, y * 1.3) - 0.5) * 0.12;
+  if (edge > 1.04) return 0;
+  if (edge > 0.94 && hash(ix, iy) < (edge - 0.94) / 0.1) return 0;
+  kinds[i] = KIND_WATER;
+  const v = 0.5 + (noise(x * 0.6, y * 0.35) - 0.5) * 0.5;
+  return rgb(...WATER_TONES[clamp(Math.floor(v * 4 + (bayerAt(ix, iy) - 0.5) * 0.6), 0, 3)]);
+}
+
+function bake() {
+  zb.fill(-1e9);
+  pix.fill(rgb(255, 255, 255));
+  for (let iy = 0; iy < H; iy++) for (let ix = 0; ix < W; ix++) {
+    const g = unproject(ix + 0.5, iy + 0.5), i = iy * W + ix;
+    const c = groundColor(g.x, g.y, ix, iy, i);
+    if (!c) continue;
+    pix[i] = c; ground[i] = 1;
+    zb[i] = (g.x + g.y) / R2 * COS;
+  }
+  groundZ.set(zb);
+  // dock deck: planks along x, gaps read as 1px dark lines via box edges
+  for (let k = 0; k < 9; k++) {
+    const px0 = DOCK.x - DOCK.w / 2 + k * (DOCK.w / 9);
+    box(px0, DOCK.y - DOCK.d / 2, DOCK.h, px0 + DOCK.w / 9 - 0.12, DOCK.y + DOCK.d / 2, DOCK.h + 0.16,
+      k % 2 ? WOOD : WOOD_DARK, k * 3.1);
+  }
+  // posts + bucket + crate
+  for (const [px, py] of [[DOCK.x - DOCK.w / 2 + 0.3, DOCK.y - DOCK.d / 2], [DOCK.x + DOCK.w / 2 - 0.3, DOCK.y + DOCK.d / 2]]) {
+    capsule([px, py, -0.6], [px, py, DOCK.h + 0.1], 0.14, 0.14, () => WOOD_DARK, 'rough');
+    castShadow(px, py, DOCK.h, 0.2);
+  }
+  box(2.2, -2.4, 0, 2.9, -1.7, 0.55, [150, 118, 82], 7); // crate on the far edge
+  castShadow(2.55, -2.05, 0.55, 0.5);
+  bakeOcclusion();
+  staticShadow.set(shadowMask);
+  applyShadows(groundZ);
+  bakedPix.set(pix);
+  bakedZ.set(zb);
+}
+
+// flowing streaks, seamless: speed * LOOP_LEN is an integer multiple of span
+const SPAN = 16, FLOW = SPAN / LOOP_LEN; // 2.0 units/s -> wraps exactly per loop
+const STREAKS = [];
+for (let k = 0; k < 160; k++) {
+  STREAKS.push({
+    x: (hash(k, 31) - 0.5) * 26,
+    y0: (hash(k, 32) - 0.5) * SPAN,
+    len: 2 + (hash(k, 35) * 3 | 0),
+    bright: hash(k, 36) > 0.72,
+    wob: hash(k, 33) * 6.28,
+  });
+}
+const WATER_LIT = rgb(150, 208, 180), WATER_SOFT = rgb(104, 180, 158), WATER_DIM = rgb(58, 112, 120);
+
+function drawWater(t) {
+  for (const s of STREAKS) {
+    const y = ((s.y0 + t * FLOW) % SPAN + SPAN) % SPAN - SPAN / 2;
+    const sway = Math.sin(y * 0.7 + s.wob) * 0.3;
+    for (let k = 0; k < s.len; k++) {
+      const p = project(s.x + sway, y + k * 0.16, 0), ix = p.sx | 0, iy = p.sy | 0;
+      if (ix < 0 || iy < 0 || ix >= W || iy >= H) continue;
+      const i = iy * W + ix;
+      if (kinds[i] !== KIND_WATER || zb[i] !== groundZ[i]) continue;
+      pix[i] = staticShadow[i] ? WATER_DIM : s.bright ? WATER_LIT : WATER_SOFT;
+    }
+  }
+}
+
+// three fish shadows circling under the dock, periodic in loop time
+function drawFish(time) {
+  const pts = [];
+  for (let f = 0; f < 3; f++) {
+    const a = loopAngle(time, f * 2.1);
+    const fx = Math.cos(a * 1 + f) * 4.5 + 1.5, fy = Math.sin(a * 1 + f) * 2.6;
+    for (let k = -2; k <= 2; k++) {
+      const p = project(fx + k * 0.22, fy, 0.02), ix = p.sx | 0, iy = p.sy | 0;
+      if (ix < 0 || iy < 0 || ix >= W || iy >= H) continue;
+      const i = iy * W + ix;
+      if (kinds[i] !== KIND_WATER || zb[i] !== groundZ[i]) continue;
+      pix[i] = rgb(40, 84, 92);
+      pts.push(i);
+    }
+  }
+  return pts;
+}
+
+function draw() {
+  pix.set(bakedPix);
+  zb.set(bakedZ);
+  pendingShadows.length = 0;
+  const t = G.time, wt = windTime(t);
+
+  // two seated figures: breathe + slight rod-side sway, all sins of loopAngle
+  const breatheA = loopSin(t, 0) * 0.03, breatheB = loopSin(t, 2.4) * 0.03;
+  const seatY = DOCK.y, seatH = DOCK.h + 0.16;
+  figure(DOCK.x - 1.4, seatY - 0.4, 1.62, { z: seatH, scale: 0.88, crouch: 0.85, lean: 0.12 + breatheA, stance: 0.05, armR: 1.25 + breatheA, armL: 0.35 }, FIG_A, dynamicAdd);
+  figure(DOCK.x + 0.6, seatY + 0.5, 1.5, { z: seatH, scale: 0.88, crouch: 0.85, lean: 0.1 + breatheB, stance: 0.05, armR: 1.3 + breatheB, armL: 0.3 }, FIG_B, dynamicAdd);
+
+  // rods: thin capsules from hands toward water, tip bobs 1px
+  const bobA = loopSin(t, 0.6) * 0.08, bobB = loopSin(t, 3.1) * 0.08;
+  capsule([DOCK.x - 0.6, seatY - 0.5, seatH + 1.1], [DOCK.x + 3.4, seatY - 1.6, 0.9 + bobA], 0.05, 0.03, () => [80, 64, 48], 'solid');
+  capsule([DOCK.x + 1.4, seatY + 0.4, seatH + 1.1], [DOCK.x + 5.2, seatY - 0.4, 0.9 + bobB], 0.05, 0.03, () => [80, 64, 48], 'solid');
+  // lines: single-pixel verticals from rod tips
+  for (const [tx, ty, bob] of [[DOCK.x + 3.4, seatY - 1.6, bobA], [DOCK.x + 5.2, seatY - 0.4, bobB]]) {
+    for (let z = 0.9 + bob; z > 0.05; z -= 0.12) plot(tx, ty, z, rgb(60, 56, 52));
+    const bp = project(tx, ty, 0.05);
+    drawDots([[bp.sx, bp.sy]], rgb(220, 60, 50)); // bobbers
+  }
+
+  drawLeaves(wt);
+  drawTufts(wt);
+  drawWater(wt);
+  drawFish(t);
+  flushShadows();
+  applyShadows(bakedZ);
+  shadeEdges();
+  // expanding ring around left bobber, radius pulses and wraps seamlessly
+  const rp = project(DOCK.x + 3.4, seatY - 1.6, 0.05);
+  const rr = 3 + ((t % LOOP_LEN) / LOOP_LEN) * 7;
+  const ring = [];
+  for (let k = 0; k < 20; k++) {
+    if (hash(k, Math.floor(rr)) > 1 - (rr % 1) * 0.4) continue;
+    const a = k / 20 * 6.283;
+    ring.push([rp.sx + Math.cos(a) * rr, rp.sy + Math.sin(a) * rr * 0.5]);
+  }
+  drawDots(ring, rgb(226, 240, 226));
+  ctx.putImageData(image, 0, 0);
+}
+
+function update(dt) {
+  G.time += dt;
+}
+
+// ---------- export ----------
+const recBtn = document.getElementById('rec');
+let recorder = null, chunks = [];
+recBtn.addEventListener('click', () => {
+  if (recorder) {
+    recorder.stop();
+    return;
+  }
+  const stream = canvas.captureStream(30);
+  chunks = [];
+  recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const url = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'morning-dock-loop.webm'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    recorder = null;
+    recBtn.textContent = 'record webm';
+  };
+  // record exactly one loop then stop
+  recorder.start();
+  recBtn.textContent = 'recording… (one loop)';
+  setTimeout(() => { if (recorder && recorder.state !== 'inactive') recorder.stop(); }, LOOP_LEN * 1000);
+});
+document.getElementById('png').addEventListener('click', () => {
+  const out = document.createElement('canvas');
+  out.width = W * 3; out.height = H * 3;
+  const o = out.getContext('2d');
+  o.imageSmoothingEnabled = false;
+  o.drawImage(canvas, 0, 0, out.width, out.height);
+  const a = document.createElement('a');
+  a.download = 'morning-dock.png';
+  a.href = out.toDataURL();
+  a.click();
+});
+
+// ---------- boot ----------
+addEventListener('resize', fit);
+fit();
+bake();
+draw();
+let last = performance.now();
+function frame(now) {
+  update(Math.min(0.04, (now - last) / 1000));
+  last = now;
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__loop = { G, LOOP_LEN, step(dt, skipDraw) { update(dt); if (!skipDraw) draw(); } };
+</script>
+</body>
+</html>
